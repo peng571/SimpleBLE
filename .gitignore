@@ -1,0 +1,69 @@
+# built application files
+*.apk
+*.ap_
+
+# files for the dex VM
+*.dex
+
+# Java class files
+*.class
+
+# built native files
+*.o
+*.so
+
+# generated files
+bin/
+gen/
+
+# Ignore gradle files
+.gradle/
+build/
+
+# Local configuration file
+local.properties
+
+# Password fild
+gradle.properties
+KS/
+sign/
+
+
+# Mac OS X clutter
+*.DS_Store
+
+# Windows thumbnail db
+Thumbs.db
+
+# OSX files
+.DS_Store
+
+
+# Android Studio
+*.iml
+.idea
+
+
+# Intellij IDEA (see https://intellij-support.jetbrains.com/entries/23393067)
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/datasources.xml
+.idea/dataSources.ids
+
+/*/out
+/*/*/build
+/*/*/production
+*.iws
+*.ipr
+*~
+*.swp
+*.iml
+
+
+# private file
+google-services.json
+gradle.properties
+
+
+
+

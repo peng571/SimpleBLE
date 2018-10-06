@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Simple BLE</string>
+
+    <string name="location_enable_question">請開啟手機GPS</string>
+    <string name="location_allow_question">請開啟手機GPS</string>
+
+    <string name="ble_state_connecting">尋找藍牙裝置</string>
+    <string name="ble_state_connected">已連接藍牙裝置</string>
+    <string name="ble_not_support">這支手機不支援BLE</string>
+
+    <string name="ok">OK</string>
+
+</resources>
