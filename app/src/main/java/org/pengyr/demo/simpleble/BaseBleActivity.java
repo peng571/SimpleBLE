@@ -35,13 +35,16 @@ import static org.pengyr.demo.simpleble.ble.LocationPermissionUtil.ENABLE_REQUES
  */
 public abstract class BaseBleActivity extends AppCompatActivity {
 
+    private final static String TAG = "BaseBleActivity";
+
     protected BleService bluetoothService;
     private boolean serviceBound = false;
 
-    protected boolean isAskingLocation = false;
     protected boolean locationPermissionAllow = false;
     protected boolean locationAllow = false;
     protected boolean bluetoothAllow = false;
+
+    protected boolean isAskingPromission = false;
 
 
     @Override
@@ -68,6 +71,7 @@ public abstract class BaseBleActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+
         locationAllow = isLocationEnable();
         bluetoothAllow = isBleEnable();
     }
@@ -103,7 +107,7 @@ public abstract class BaseBleActivity extends AppCompatActivity {
     /**
      * Permission methods
      */
-    protected boolean isBleEnable() {
+    protected synchronized boolean isBleEnable() {
         boolean enable = BlePermissionUtil.isBluetoothEnable();
         if (enable) {
             onBleEnableResult(REQUEST_ENABLE_BT, RESULT_OK);
@@ -111,13 +115,16 @@ public abstract class BaseBleActivity extends AppCompatActivity {
         return enable;
     }
 
-    protected void checkBleEnable() {
+    protected synchronized void checkBleEnable() {
+        if (isAskingPromission) return;
+        isAskingPromission = true;
+
         if (!isBleEnable()) {
             BlePermissionUtil.enableBluetooth(this);
         }
     }
 
-    protected boolean isLocationEnable() {
+    protected synchronized boolean isLocationEnable() {
         if (Build.VERSION.SDK_INT >= M) {
             locationPermissionAllow = LocationPermissionUtil.isLocationPermissionEnable(this);
             locationAllow = LocationPermissionUtil.isLocationEnable(this);
@@ -129,10 +136,11 @@ public abstract class BaseBleActivity extends AppCompatActivity {
         return true;
     }
 
-    protected void checkLocationEnable() {
-        // android skd > 6.0 must check location when using bluetooth
-        if (isAskingLocation) return;
-        isAskingLocation = true;
+    // android skd > 6.0 must check location when using bluetooth
+    protected synchronized void checkLocationEnable() {
+        if (isAskingPromission) return;
+        isAskingPromission = true;
+
         if (Build.VERSION.SDK_INT >= M) {
             locationPermissionAllow = LocationPermissionUtil.isLocationPermissionEnable(this);
             if (locationPermissionAllow) {
@@ -150,7 +158,7 @@ public abstract class BaseBleActivity extends AppCompatActivity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
-        isAskingLocation = false;
+        isAskingPromission = false;
         onLocationPermissionEnableResult(requestCode, grantResults[0]);
     }
 
@@ -159,7 +167,7 @@ public abstract class BaseBleActivity extends AppCompatActivity {
      * On Permission Result
      */
     protected void onLocationPermissionEnableResult(int requestCode, int resultCode) {
-        isAskingLocation = false;
+        isAskingPromission = false;
         if (requestCode != LocationPermissionUtil.PERMISSION_REQUEST_COARSE_LOCATION) return;
         if (resultCode != PackageManager.PERMISSION_GRANTED) {
             locationPermissionAllow = false;
@@ -171,6 +179,7 @@ public abstract class BaseBleActivity extends AppCompatActivity {
     }
 
     protected void onBleEnableResult(int requestCode, int resultCode) {
+        isAskingPromission = false;
         if (requestCode != REQUEST_ENABLE_BT) return;
         if (resultCode == Activity.RESULT_CANCELED) {
             //Bluetooth not enabled.
@@ -183,7 +192,8 @@ public abstract class BaseBleActivity extends AppCompatActivity {
     }
 
     protected void onLocationEnableResult(int requestCode, int resultCode) {
-        isAskingLocation = false;
+        isAskingPromission = false;
+
         if (requestCode != ENABLE_REQUEST_COARSE_LOCATION) return;
         locationAllow = LocationPermissionUtil.checkLocationEnable(this);
         startConnectBluetooth();
@@ -228,7 +238,6 @@ public abstract class BaseBleActivity extends AppCompatActivity {
             return;
         }
 
-        Log.d("Base", "start connect");
         if (bluetoothService.isConnectSucceeded()) {
             onConnectOn();
         } else {
@@ -245,6 +254,7 @@ public abstract class BaseBleActivity extends AppCompatActivity {
         public void onReceive(Context context, Intent intent) {
             if (intent == null) return;
             final String action = intent.getStringExtra(BLUETOOTH_ACTION);
+            Log.v(TAG, "on broadcast receive action : " + action);
             switch (action) {
                 case ACTION_DEVICE_CONNECT_SUCCEEDED:
                     onConnectOn();

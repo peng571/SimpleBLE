@@ -17,6 +17,7 @@ import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.ParcelUuid;
@@ -32,6 +33,7 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 import static android.os.Build.VERSION_CODES.LOLLIPOP;
+import static android.os.Build.VERSION_CODES.M;
 
 
 /**
@@ -41,6 +43,8 @@ import static android.os.Build.VERSION_CODES.LOLLIPOP;
 
 @TargetApi(LOLLIPOP)
 public class BleService extends Service {
+
+    private final static String TAG = "BleService";
 
     private static final long CONNECT_TIMEOUT_MS = 30000;
     private long startConnectTimestamp = 0;
@@ -82,7 +86,6 @@ public class BleService extends Service {
      * Main Entry to start connect device
      */
     public void startConnectDevice() {
-        Log.d("ble", "start connect");
         if (!isAlive) return;
         if (!bluetoothAdapter.isEnabled()) return;
         if (isConnectSucceeded()) return;
@@ -96,7 +99,6 @@ public class BleService extends Service {
      * Main Entry to start disconnect device
      */
     public void disconnectDevice() {
-        Log.d("ble", "disconnectDevice");
         if (!isAlive) return;
         connectState = STATE_DISCONNECTING;
         bluetoothGattService = null;
@@ -126,7 +128,6 @@ public class BleService extends Service {
      * scan device
      */
     private synchronized void startScan() {
-        Log.d("ble", "startScan");
         if (!isAlive) return;
         if (bluetoothAdapter == null) return;
         BluetoothLeScanner scanner = bluetoothAdapter.getBluetoothLeScanner();
@@ -138,6 +139,9 @@ public class BleService extends Service {
         ArrayList<ScanFilter> filters = new ArrayList<>();
         filters.add(new ScanFilter.Builder().setServiceUuid(new ParcelUuid(BleConstants.DEVICE_UUID)).build());
         ScanSettings.Builder settingBuilder = new ScanSettings.Builder();
+        if (Build.VERSION.SDK_INT > M) {
+            settingBuilder.setCallbackType(ScanSettings.CALLBACK_TYPE_FIRST_MATCH);
+        }
         settingBuilder.setScanMode(ScanSettings.SCAN_MODE_BALANCED);
         scanner.startScan(filters, settingBuilder.build(), scanCallback);
     }
@@ -146,13 +150,11 @@ public class BleService extends Service {
      * restart scan when disconnect or failed
      */
     private void restartScan() {
-        Log.d("ble", "restartScan");
         disconnectDevice();
         startScan();
     }
 
     private synchronized void stopScan() {
-        Log.d("ble", "stopScan");
         if (!isAlive) return;
         if (bluetoothAdapter == null) return;
         if (!bluetoothAdapter.isEnabled()) return;
@@ -165,7 +167,10 @@ public class BleService extends Service {
         public void onScanResult(int callbackType, ScanResult result) {
             super.onScanResult(callbackType, result);
             if (!isAlive) return;
+
             BluetoothDevice device = result.getDevice();
+            Log.v(TAG, "onScan Success " + device.toString());
+            Log.v(TAG, "Advertisement: Device name: " + device.getName() + ", address: " + device.getAddress());
             stopScan();
             connectToDevice(device);
         }
@@ -187,7 +192,6 @@ public class BleService extends Service {
      * connect device
      */
     private void connectToDevice(@NonNull final BluetoothDevice device) {
-        Log.d("ble", "connectToDevice");
         if (!isAlive) return;
         bluetoothGatt = device.connectGatt(this, false, gattCallback);
     }
@@ -197,7 +201,7 @@ public class BleService extends Service {
 
         @Override
         public synchronized void onConnectionStateChange(final BluetoothGatt gatt, int status, int newState) {
-            Log.d("ble", "onConnectionStateChange " + newState);
+            Log.v(TAG, "onConnectionStateChange " + status + ", " + newState);
             if (!isAlive) return;
             if (status != GATT_SUCCESS) {
                 // get gatt status not success
@@ -229,7 +233,6 @@ public class BleService extends Service {
          */
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-            Log.d("ble", "onServicesDiscovered");
             if (!isAlive) return;
             // check status
             if (status != BluetoothGatt.GATT_SUCCESS) {
@@ -260,7 +263,6 @@ public class BleService extends Service {
 
             bluetoothGatt.setCharacteristicNotification(bluetoothNotifyCharacteristic, true);
             connectState = STATE_CONNECTED;
-            Log.d("ble", "ACTION_DEVICE_CONNECT_SUCCEEDED");
             broadcastUpdate(BleConstants.ACTION_DEVICE_CONNECT_SUCCEEDED);
         }
 
