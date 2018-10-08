@@ -16,12 +16,10 @@ public class MainActivity extends BaseBleActivity {
     }
 
     @Override protected void onConnectOn() {
-        Log.d("Main", "onConnectOn");
         textView.setText(R.string.ble_state_connected);
     }
 
     @Override protected void onConnectOff() {
-        Log.d("Main", "onConnectOff");
         textView.setText(R.string.ble_state_connecting);
     }
 }

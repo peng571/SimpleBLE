@@ -205,6 +205,7 @@ public class BleService extends Service {
             if (!isAlive) return;
             if (status != GATT_SUCCESS) {
                 // get gatt status not success
+                broadcastUpdate(BleConstants.ACTION_DEVICE_NOT_CONNECTED);
                 restartScan();
                 return;
             }
@@ -216,7 +217,6 @@ public class BleService extends Service {
                     bluetoothGatt = gatt;
                     bluetoothGatt.discoverServices();
                     break;
-
                 case STATE_DISCONNECTED:
                     // Disconnected from GATT server.
                     connectState = STATE_DISCONNECTED;
