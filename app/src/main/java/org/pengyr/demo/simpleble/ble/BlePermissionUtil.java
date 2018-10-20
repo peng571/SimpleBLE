@@ -7,7 +7,6 @@ import android.content.Intent;
 
 import static android.os.Build.VERSION_CODES.LOLLIPOP;
 
-
 @TargetApi(LOLLIPOP)
 public class BlePermissionUtil {
 
